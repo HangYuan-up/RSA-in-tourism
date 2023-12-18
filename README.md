@@ -4,4 +4,4 @@ Hang Yuan, Siyang Luo. (2023). Application of Representational Similarity Analys
 
 This repository contains the main analyses of the show case in the manuscript, as a brief introduction to apply RSA in tourism studies. Detailed description please see the comments in the scripts.
 
-To make sure the script runs without error, you need to download all the scripts and data, and save them in the same file. Recommend saving the file at C:\RSA.
+To make sure the script runs without error, you need to download all the scripts and data, and save them in the same file. And add the corresponding pathname to the script.
