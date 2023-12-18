@@ -1,0 +1,74 @@
+rm(list=ls())
+
+library(readxl)
+library(ggplot2)
+library(ggalt)
+library(ade4)
+#Figure 5E:Time-point-wise representational similarity values (r) between neural activity RDM and theoretical RDM for participants in the PL group.
+timedata <- read_excel(".../manus/script&data/Dataset_Figure5_timeserisedata_bio.xlsx")
+timedataslice<-as.data.frame(matrix(data=NA,nrow = 601,ncol=14))
+colnames(timedataslice)<-c("Time(ms)","timepoint","CHPL","CMPL","CLPL","FHPL","FMPL","FLPL","CHOT","CMOT","CLOT","FHOT","FMOT","FLOT")
+timewindow<-as.data.frame(matrix(data=NA,nrow =10,ncol=12))
+for (i in 1:601){
+  timedataslice[i,1]<-timedata[i,1]
+  timedataslice[i,2]<-timedata[i,2]
+  for (j in 1:20){
+    timewindow[j,1]<-timedata[c(i+j-1),3]
+    timewindow[j,2]<-timedata[c(i+j-1),4]
+    timewindow[j,3]<-timedata[c(i+j-1),5]
+    timewindow[j,4]<-timedata[c(i+j-1),6]
+    timewindow[j,5]<-timedata[c(i+j-1),7]
+    timewindow[j,6]<-timedata[c(i+j-1),8]
+    timewindow[j,7]<-timedata[c(i+j-1),9]
+    timewindow[j,8]<-timedata[c(i+j-1),10]
+    timewindow[j,9]<-timedata[c(i+j-1),11]
+    timewindow[j,10]<-timedata[c(i+j-1),12]
+    timewindow[j,11]<-timedata[c(i+j-1),13]
+    timewindow[j,12]<-timedata[c(i+j-1),14]
+  }
+  timedataslice[i,c(3:14)]<-t(as.matrix(colMeans(na.omit(timewindow))))
+}
+
+correlation<-matrix(data=NA,nrow = 601,ncol=1)
+pvalue<-matrix(data=NA,nrow = 601,ncol=1)
+significance<-matrix(data=NA,nrow = 601,ncol=1)
+
+concept<-timedata[1,c(16:21)]
+concept<-as.data.frame(concept)
+concept<-as.matrix(dist(t(concept)))
+concept<-1-concept/max(concept)
+
+for (i in 1:601){
+  PL<-timedata[i,c(3:8)]
+  PL<-as.data.frame(PL)
+  PL<-as.matrix(dist(t(PL)))
+  PL<-1-PL/max(PL)
+  a<-mantel.rtest(dist(t(PL)),dist(t(concept)),nrepet = 999)
+  correlation[i]=a[["obs"]]
+  pvalue[i]=a[["pvalue"]]
+  if (pvalue[i]<=0.05){
+    significance[i]=1}
+  else{significance[i]=0}
+}
+
+rsadata<-as.data.frame(cbind(timedataslice[c(1:601),1],correlation,pvalue,significance))
+colnames(rsadata)<-c("time","correlation","p","significance")
+
+dev.new()
+ggplot(rsadata,aes(y=correlation,x=time))+
+  geom_line(colour="blue",size=1)+
+  geom_line(aes(y=pvalue),colour="white",size=0)+
+  scale_y_continuous(expand = c(0,0),limits = c(-0.6,1),
+                     sec.axis = sec_axis(~.,name="p"))+
+  scale_x_continuous(limits = c(-200,1000),breaks=seq(-200,1000,100))+
+  geom_area(data=rsadata,aes(time,pvalue),alpha=0.2,fill=4)+
+  theme_test(base_size = 20)+
+  theme(legend.title = element_blank(),
+        legend.text = element_text(family = 'serif'), 
+        legend.position = c(.2,.9),
+        legend.direction = "horizontal",
+        axis.text = element_text(color = 'black',family = 'serif'),
+        axis.title = element_text(family = 'serif',size = 18,color = 'black'))+
+  geom_hline(aes(yintercept=0), colour="black", linetype="dashed")+
+  geom_vline(aes(xintercept=0), colour="black", linetype="dashed")+
+  geom_hline(aes(yintercept=0.05), colour="red", linetype="dashed")
